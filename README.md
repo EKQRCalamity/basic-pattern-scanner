@@ -47,3 +47,5 @@ if let Some(m) = scan_all_iter(data, &p).next() {
 // Check a single known offset
 assert!(p.matches_at(data, 0x1000));
 ```
+
+Another example of usage for this module can be found in my RPM/WPM project: [lime-rs](https://github.com/EKQRCalamity/lime-rs)
