@@ -1,15 +1,15 @@
 ## Basic PatternScanner
 Basic Pattern scanner which supports Byte wise and Nibble wise scanning with raw byte/mask combinations as well as derivation from a ida/sigmaker pattern. Fully written in safe Rust.
 
-NOTE: THIS IS NOT AN IN-PROCESS MEMORY SCANNER, YOU WILL HAVE TO GET THE DATA FOR THE BINARY OR PROCESS YOURSELF
+NOTE: THIS IS NOT AN IN-PROCESS MEMORY SCANNER, YOU WILL HAVE TO GET THE DATA OF THE BINARY OR PROCESS YOURSELF
 
 ## Usage
 
 This shows basic usage, different architectures will require different patterns.
 
 ```rust
-use patternscanner::pattern::types::Pattern;
-use patternscanner::scanner::scanner::{
+use simple_pattern_scanner::pattern::types::Pattern;
+use simple_pattern_scanner::scanner::scanner::{
     scan_all, scan_all_with_base, scan_all_iter,
 };
 
