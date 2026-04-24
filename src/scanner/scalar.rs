@@ -130,26 +130,3 @@ impl<'a> Iterator for MatchWithAddrIter<'a> {
 		})
 	}
 }
-
-pub fn scan_all(data: &[u8], pat: &Pattern) -> Vec<Match> {
-	scan_all_iter(data, pat).collect()
-}
-
-pub fn scan_all_with_base(data: &[u8], pat: &Pattern, base: u64) -> Vec<MatchWithAddr> {
-	scan_all_with_base_iter(data, pat, base).collect()
-}
-
-pub fn scan_all_iter<'a>(data: &'a [u8], pat: &'a Pattern) -> MatchIter<'a> {
-	MatchIter::new(data, pat)
-}
-
-pub fn scan_all_with_base_iter<'a>(
-	data: &'a [u8],
-	pat: &'a Pattern,
-	base: u64,
-) -> MatchWithAddrIter<'a> {
-	MatchWithAddrIter {
-		inner: MatchIter::new(data, pat),
-		base,
-	}
-}

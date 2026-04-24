@@ -7,8 +7,8 @@ pub mod scanner;
 #[cfg(test)]
 mod tests {
 	use crate::pattern::types::Pattern;
-	use crate::scanner::scalar::*;
-	use crate::scanner::types::*;
+	use crate::scanner::traits::PatternIterator;
+use crate::scanner::{scalar, types::*};
 
 	#[cfg(feature = "simd_std_unstable")]
 	mod simd_tests {
@@ -156,49 +156,49 @@ mod tests {
 	fn single_match_at_start() {
 		let data = &[0xDE, 0xAD, 0xBE, 0xEF, 0x00];
 		let p = Pattern::from_ida_str("DE AD BE EF").unwrap();
-		assert_eq!(offsets(scan_all(data, &p)), &[0]);
+		assert_eq!(offsets(scalar::ScalarScanner.find_all(data, &p)), &[0]);
 	}
 
 	#[test]
 	fn single_match_at_end() {
 		let data = &[0x00, 0x00, 0xDE, 0xAD];
 		let p = Pattern::from_ida_str("DE AD").unwrap();
-		assert_eq!(offsets(scan_all(data, &p)), &[2]);
+		assert_eq!(offsets(scalar::ScalarScanner.find_all(data, &p)), &[2]);
 	}
 
 	#[test]
 	fn multiple_matches() {
 		let data = &[0xAA, 0xBB, 0x00, 0xAA, 0xBB];
 		let p = Pattern::from_ida_str("AA BB").unwrap();
-		assert_eq!(offsets(scan_all(data, &p)), &[0, 3]);
+		assert_eq!(offsets(scalar::ScalarScanner.find_all(data, &p)), &[0, 3]);
 	}
 
 	#[test]
 	fn no_match() {
 		let data = &[0x11, 0x22, 0x33];
 		let p = Pattern::from_ida_str("AA BB").unwrap();
-		assert!(scan_all(data, &p).is_empty());
+		assert!(scalar::ScalarScanner.find_all(data, &p).is_empty());
 	}
 
 	#[test]
 	fn wildcard_matches_any_byte() {
 		let data = &[0xAA, 0x00, 0xBB, 0xAA, 0xFF, 0xBB];
 		let p = Pattern::from_ida_str("AA ?? BB").unwrap();
-		assert_eq!(offsets(scan_all(data, &p)), &[0, 3]);
+		assert_eq!(offsets(scalar::ScalarScanner.find_all(data, &p)), &[0, 3]);
 	}
 
 	#[test]
 	fn all_wildcard_pattern_matches_every_position() {
 		let data = &[0x01, 0x02, 0x03];
 		let p = Pattern::from_ida_str("?? ??").unwrap();
-		assert_eq!(offsets(scan_all(data, &p)), &[0, 1]);
+		assert_eq!(offsets(scalar::ScalarScanner.find_all(data, &p)), &[0, 1]);
 	}
 
 	#[test]
 	fn pattern_longer_than_data_no_match() {
 		let data = &[0xAA, 0xBB];
 		let p = Pattern::from_ida_str("AA BB CC DD").unwrap();
-		assert!(scan_all(data, &p).is_empty());
+		assert!(scalar::ScalarScanner.find_all(data, &p).is_empty());
 	}
 
 	#[test]
@@ -222,14 +222,14 @@ mod tests {
 	fn nibble_mask_scan() {
 		let p = Pattern::from_ida_like_with_nibble("?F").unwrap();
 		let data = &[0x0F, 0x1F, 0xAF, 0x10, 0xFF];
-		assert_eq!(offsets(scan_all(data, &p)), &[0, 1, 2, 4]);
+		assert_eq!(offsets(scalar::ScalarScanner.find_all(data, &p)), &[0, 1, 2, 4]);
 	}
 
 	#[test]
 	fn nibble_mask_high_wildcard_scan() {
 		let p = Pattern::from_ida_like_with_nibble("A?").unwrap();
 		let data = &[0xA0, 0xAF, 0xBF, 0x0A];
-		assert_eq!(offsets(scan_all(data, &p)), &[0, 1]);
+		assert_eq!(offsets(scalar::ScalarScanner.find_all(data, &p)), &[0, 1]);
 	}
 
 	#[test]
@@ -237,7 +237,7 @@ mod tests {
 		let data = &[0x00, 0xAA, 0xBB];
 		let p = Pattern::from_ida_str("AA BB").unwrap();
 		let base: u64 = 0x140000000;
-		let results = scan_all_with_base(data, &p, base);
+		let results = scalar::ScalarScanner.find_all_with_base(data, &p, base);
 		assert_eq!(results.len(), 1);
 		assert_eq!(results[0].offset, 1);
 		assert_eq!(results[0].address, base + 1);
@@ -247,7 +247,7 @@ mod tests {
 	fn iter_stops_early() {
 		let data = &[0xAA, 0x00, 0xAA, 0x00, 0xAA];
 		let p = Pattern::from_ida_str("AA").unwrap();
-		let first = scan_all_iter(data, &p).next().unwrap();
+		let first = scalar::ScalarScanner.scan_all(data, &p).next().unwrap();
 		assert_eq!(first.offset, 0);
 	}
 
@@ -255,8 +255,8 @@ mod tests {
 	fn iter_and_collect_agree() {
 		let data: Vec<u8> = (0u8..=255).collect();
 		let p = Pattern::from_ida_str("10 11 12").unwrap();
-		let via_iter: Vec<usize> = scan_all_iter(&data, &p).map(|m| m.offset).collect();
-		let via_fn = offsets(scan_all(&data, &p));
+		let via_iter: Vec<usize> = scalar::ScalarScanner.scan_all(&data, &p).map(|m| m.offset).collect();
+		let via_fn = offsets(scalar::ScalarScanner.find_all(&data, &p));
 		assert_eq!(via_iter, via_fn);
 	}
 
@@ -276,7 +276,7 @@ mod tests {
 
 		let p = Pattern::from_ida_str("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ??").unwrap();
 
-		let matches = scan_all(data, &p);
+		let matches = scalar::ScalarScanner.find_all(data, &p);
 		assert_eq!(matches.len(), 1);
 		assert_eq!(matches[0].offset, 12);
 		assert!(p.matches_at(data, 12));
@@ -288,9 +288,9 @@ mod tests {
 		let data: &[u8] = &[0xAB, 0xAB, 0xAB, 0xAB, 0xAB];
 
 		let p_match = Pattern::from_ida_like_with_nibble("AB ?B").unwrap();
-		assert_eq!(offsets(scan_all(data, &p_match)), &[0, 1, 2, 3]);
+		assert_eq!(offsets(scalar::ScalarScanner.find_all(data, &p_match)), &[0, 1, 2, 3]);
 
 		let p_no_match = Pattern::from_ida_like_with_nibble("AB ?0").unwrap();
-		assert!(scan_all(data, &p_no_match).is_empty());
+		assert!(scalar::ScalarScanner.find_all(data, &p_no_match).is_empty());
 	}
 }
