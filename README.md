@@ -9,7 +9,7 @@ NOTE: THIS IS NOT AN IN-PROCESS MEMORY SCANNER, YOU WILL HAVE TO GET THE DATA OF
 
 ## Usage
 
-Examples can be found under [minimal-example](https://github.com/EKQRCalamity/basic_pattern_scanner/minimal_example/). These point to a directory path, so if it is removed from the folder structure you will have to change it to a release on [crates.io](https://crates.io).
+Examples can be found under [minimal-example](https://github.com/EKQRCalamity/basic-pattern-scanner/minimal-example/). These point to a directory path, so if it is removed from the folder structure you will have to change it to a release on [crates.io](https://crates.io).
 
 If you checked out the examples, you will notice adoption of SIMD or vise versa Scalar is as easy as using a different `Scanner` implementing `PatternIterator`. The only hurdle for building with SIMD support is the nightly guard, but as long as you compile with `cargo +nightly` this should not be a problem. In my own setup I was able to see around a 1.3-2x increase in speed of search when using SIMD, this will MOST LIKELY differ on your own setup.
 
