@@ -2,23 +2,29 @@ use std::borrow::Cow;
 
 use crate::error::{Error, InternalResult};
 
-// Currently basically unsused, should be used if more kinds of patterns should be supported
+/// Represents the rough type of pattern
+/// Currently basically unsused, should be used if more kinds of patterns should be supported
 #[derive(Debug)]
 pub enum PatternKind {
 	Ida,
 }
 
+/// Represents the type of Pattern, if its a Raw String or a Byte Array with Mask,
+/// RawString is basically unused at the moment since all string are "compiled" to the Byte Array
+/// with Mask form.
 #[derive(Debug)]
 pub enum PatternRepr {
 	RawString,
 	BytesWithMask,
 }
 
+/// Mask type to differentiate between a full 8bit Byte Mask or a 4bit Nibble Mask
 pub enum MaskType {
 	Byte,
 	Nibble,
 }
 
+/// Holds Pattern Bytes, Mask, Type and the Nibble/Byte Compat mask
 pub struct Pattern {
 	pub bytes: Vec<u8>,
 	pub mask: Vec<u8>,
@@ -28,6 +34,7 @@ pub struct Pattern {
 }
 
 impl Pattern {
+	/// Create a new Pattern via Bytes, Mask and Type of Mask directly
 	pub fn new(bytes: Vec<u8>, mask: Vec<u8>, mask_type: MaskType) -> InternalResult<Self> {
 		if bytes.len() > mask.len() {
 			Err(Error::InvalidPattern {
@@ -62,14 +69,18 @@ impl Pattern {
 			.all(|(i, (m, mb))| data[offset + i] & m == *mb)
 	}
 
+	// Shorthand for new with `MaskType::Byte`
 	pub fn new_with_byte_mask(bytes: Vec<u8>, mask: Vec<u8>) -> InternalResult<Self> {
 		Self::new(bytes, mask, MaskType::Byte)
 	}
 
+	// Shorthand for new with `MaskType::Nibble`
 	pub fn new_with_nibble_mask(bytes: Vec<u8>, mask: Vec<u8>) -> InternalResult<Self> {
 		Self::new(bytes, mask, MaskType::Nibble)
 	}
 
+	/// Helper function to convert an IDA Style Pattern (SigMaker) to the Byte Array with Mask
+	/// representation and receive the prepared pattern
 	pub fn from_ida_str(pattern: &str) -> InternalResult<Self> {
 		let mut bytes: Vec<u8> = Vec::new();
 		let mut mask: Vec<u8> = Vec::new();
@@ -92,6 +103,8 @@ impl Pattern {
 		Pattern::new_with_byte_mask(bytes, mask)
 	}
 
+	/// Helper function to convert an IDA Style Pattern (SigMaker) to the Byte Array with Mask
+	/// representation and receive the prepared pattern, accepts Nibble patterns (48 4? ?5)
 	pub fn from_ida_like_with_nibble(pattern: &str) -> InternalResult<Self> {
 		let mut bytes: Vec<u8> = Vec::new();
 		let mut mask: Vec<u8> = Vec::new();

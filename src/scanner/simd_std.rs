@@ -7,7 +7,8 @@ use crate::scanner::scalar::MatchIter as ScalarIter;
 use crate::scanner::traits::PatternIterator;
 use crate::scanner::types::Match;
 
-/// 16 is usually fine, if you are sure your hardware supports 32 bit lanes
+/// 16 is usually fine, if you are sure your hardware supports 32 bit lanes you can increase this
+/// up to 64
 const LANES: usize = 16;
 type U8xN = Simd<u8, LANES>;
 
@@ -23,6 +24,8 @@ impl PatternIterator for SimdScanner {
 	}
 }
 
+/// Lazily yield offsets in `data` whre `pattern` matches
+/// Uses SIMD for the anchor and first byte check
 pub struct SimdMatchIter<'a> {
 	data: &'a [u8],
 	pattern: &'a Pattern,
@@ -61,7 +64,7 @@ impl<'a> SimdMatchIter<'a> {
 		}
 	}
 
-	/// Returns `false` when no more SIMD chunks are available
+	/// Returns `false` when no more SIMD chunks are available.
 	fn fill_candidates(&mut self) -> bool {
 		let pattern_length = self.pattern.masked_bytes.len();
 

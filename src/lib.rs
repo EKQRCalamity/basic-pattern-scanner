@@ -8,7 +8,7 @@ pub mod scanner;
 mod tests {
 	use crate::pattern::types::Pattern;
 	use crate::scanner::traits::PatternIterator;
-use crate::scanner::{scalar, types::*};
+	use crate::scanner::{scalar, types::*};
 
 	#[cfg(feature = "simd_std_unstable")]
 	mod simd_tests {

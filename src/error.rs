@@ -4,6 +4,7 @@ use crate::pattern::types::{PatternKind, PatternRepr};
 
 pub type InternalResult<T> = Result<T, Error>;
 
+/// Represents the module errors
 #[derive(Debug)]
 pub enum Error {
 	InvalidPattern {

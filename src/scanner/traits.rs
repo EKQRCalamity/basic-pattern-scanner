@@ -3,6 +3,7 @@ use crate::{
 	scanner::types::{Match, MatchWithAddr},
 };
 
+/// Trait for base implementation for different types of scanners.
 pub trait PatternIterator {
 	fn scan_all<'a>(
 		&self,

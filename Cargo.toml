@@ -1,6 +1,6 @@
 [package]
 name = "basic_pattern_scanner"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
 description = "Fast no-dependencies byte-pattern scanner with IDA-style and nibble-mask pattern support"
 license = "MIT"

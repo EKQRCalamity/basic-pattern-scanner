@@ -18,7 +18,7 @@ impl PatternIterator for ScalarScanner {
 	}
 }
 
-/// Lazily yields every offset in `data` where `pat` matches.
+/// Lazily yields every offset in `data` where `pattern` matches.
 /// Uses the first non-wildcard byte as an anchor to skip the full
 /// comparison on most positions.
 pub struct MatchIter<'a> {
