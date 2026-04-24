@@ -1,7 +1,14 @@
-use crate::{pattern::types::Pattern, scanner::types::{Match, MatchWithAddr}};
+use crate::{
+	pattern::types::Pattern,
+	scanner::types::{Match, MatchWithAddr},
+};
 
 pub trait PatternIterator {
-	fn scan_all<'a>(&self, data: &'a [u8], pattern: &'a Pattern) -> Box<dyn Iterator<Item = Match> + 'a>;
+	fn scan_all<'a>(
+		&self,
+		data: &'a [u8],
+		pattern: &'a Pattern,
+	) -> Box<dyn Iterator<Item = Match> + 'a>;
 
 	/// This is a convienience function which calculates the offset + base and gives back both
 	fn scan_all_with_base<'a>(
@@ -11,11 +18,12 @@ pub trait PatternIterator {
 		base: u64,
 	) -> Box<dyn Iterator<Item = MatchWithAddr> + 'a> {
 		Box::new(
-			self.scan_all(data, pattern)
+			self
+				.scan_all(data, pattern)
 				.map(move |_match| MatchWithAddr {
 					offset: _match.offset,
 					address: base + _match.offset as u64,
-				})
+				}),
 		)
 	}
 
@@ -30,4 +38,4 @@ pub trait PatternIterator {
 	fn find_all_with_base(&self, data: &[u8], pattern: &Pattern, base: u64) -> Vec<MatchWithAddr> {
 		self.scan_all_with_base(data, pattern, base).collect()
 	}
-} 
+}

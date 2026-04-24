@@ -1,10 +1,20 @@
-use crate::{pattern::types::Pattern, scanner::{traits::PatternIterator, types::{Match, MatchWithAddr}}};
+use crate::{
+	pattern::types::Pattern,
+	scanner::{
+		traits::PatternIterator,
+		types::{Match, MatchWithAddr},
+	},
+};
 
 pub struct ScalarScanner;
 
 impl PatternIterator for ScalarScanner {
-	fn scan_all<'a>(&self, data: &'a [u8], pattern: &'a Pattern) -> Box<dyn Iterator<Item = Match> + 'a> {
-	  Box::new(MatchIter::new(data, pattern))
+	fn scan_all<'a>(
+		&self,
+		data: &'a [u8],
+		pattern: &'a Pattern,
+	) -> Box<dyn Iterator<Item = Match> + 'a> {
+		Box::new(MatchIter::new(data, pattern))
 	}
 }
 
@@ -22,7 +32,7 @@ pub struct MatchIter<'a> {
 }
 
 impl<'a> MatchIter<'a> {
-	pub (crate) fn new(data: &'a [u8], pattern: &'a Pattern) -> Self {
+	pub(crate) fn new(data: &'a [u8], pattern: &'a Pattern) -> Self {
 		// anchor_mask == 0 means all-wildcard pattern; the anchor check is skipped.
 		let (anchor_idx, anchor_masked, anchor_mask) = pattern
 			.mask
@@ -33,19 +43,35 @@ impl<'a> MatchIter<'a> {
 			.map(|(id, (mask, masked_bool))| (id, *masked_bool, *mask))
 			.unwrap_or((0, 0, 0));
 
-		Self { data, pattern, anchor_idx, anchor_masked, anchor_mask, pos: 0 }
+		Self {
+			data,
+			pattern,
+			anchor_idx,
+			anchor_masked,
+			anchor_mask,
+			pos: 0,
+		}
 	}
 
 	#[cfg_attr(not(feature = "simd_std_unstable"), allow(dead_code))]
-	pub (crate) fn new_at(data: &'a [u8], pattern: &'a Pattern, position: usize) -> Self {
+	pub(crate) fn new_at(data: &'a [u8], pattern: &'a Pattern, position: usize) -> Self {
 		let (anchor_idx, anchor_masked, anchor_mask) = pattern
-			.mask.iter().zip(pattern.masked_bytes.iter())
+			.mask
+			.iter()
+			.zip(pattern.masked_bytes.iter())
 			.enumerate()
 			.find(|(_, (m, _))| **m != 0)
 			.map(|(i, (m, mb))| (i, *mb, *m))
-			.unwrap_or((0,0,0));
+			.unwrap_or((0, 0, 0));
 
-		Self { data, pattern, anchor_idx, anchor_masked, anchor_mask, pos: position }
+		Self {
+			data,
+			pattern,
+			anchor_idx,
+			anchor_masked,
+			anchor_mask,
+			pos: position,
+		}
 	}
 }
 
@@ -70,9 +96,7 @@ impl<'a> Iterator for MatchIter<'a> {
 			let start = self.pos;
 			self.pos += 1;
 
-			if anchor_mask != 0
-				&& (data[start + anchor_idx] & anchor_mask) != anchor_masked
-			{
+			if anchor_mask != 0 && (data[start + anchor_idx] & anchor_mask) != anchor_masked {
 				continue;
 			}
 
@@ -124,5 +148,8 @@ pub fn scan_all_with_base_iter<'a>(
 	pat: &'a Pattern,
 	base: u64,
 ) -> MatchWithAddrIter<'a> {
-	MatchWithAddrIter { inner: MatchIter::new(data, pat), base }
+	MatchWithAddrIter {
+		inner: MatchIter::new(data, pat),
+		base,
+	}
 }

@@ -10,5 +10,5 @@ pub enum Error {
 		kind: PatternKind,
 		repr: PatternRepr,
 		hint: Option<Cow<'static, String>>,
-	}
+	},
 }

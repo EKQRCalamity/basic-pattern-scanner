@@ -14,7 +14,11 @@ type U8xN = Simd<u8, LANES>;
 pub struct SimdScanner;
 
 impl PatternIterator for SimdScanner {
-	fn scan_all<'a>(&self, data: &'a [u8], pattern: &'a Pattern) -> Box<dyn Iterator<Item = Match> + 'a> {
+	fn scan_all<'a>(
+		&self,
+		data: &'a [u8],
+		pattern: &'a Pattern,
+	) -> Box<dyn Iterator<Item = Match> + 'a> {
 		Box::new(SimdMatchIter::new(data, pattern))
 	}
 }
@@ -32,8 +36,7 @@ pub struct SimdMatchIter<'a> {
 	tail: Option<ScalarIter<'a>>,
 }
 
-
-impl <'a> SimdMatchIter<'a> {
+impl<'a> SimdMatchIter<'a> {
 	fn new(data: &'a [u8], pattern: &'a Pattern) -> Self {
 		let (anchor_idx, anchor_masked, anchor_mask) = pattern
 			.mask
@@ -88,8 +91,7 @@ impl <'a> SimdMatchIter<'a> {
 			let mask_v = U8xN::splat(self.anchor_mask);
 
 			let window = U8xN::from_slice(
-				&self.data[self.simd_pos + self.anchor_idx
-					..self.simd_pos + self.anchor_idx + LANES],
+				&self.data[self.simd_pos + self.anchor_idx..self.simd_pos + self.anchor_idx + LANES],
 			);
 
 			let hits = (window & mask_v).simd_eq(needle);
@@ -103,7 +105,6 @@ impl <'a> SimdMatchIter<'a> {
 					}
 				}
 			}
-
 		}
 
 		self.simd_pos += LANES;
@@ -112,7 +113,7 @@ impl <'a> SimdMatchIter<'a> {
 	}
 }
 
-impl <'a> Iterator for SimdMatchIter<'a> {
+impl<'a> Iterator for SimdMatchIter<'a> {
 	type Item = Match;
 
 	#[inline]
@@ -133,10 +134,8 @@ impl <'a> Iterator for SimdMatchIter<'a> {
 
 			if !self.fill_candidates() {
 				let base_offset = self.simd_pos;
-				
-				self.tail = Some(
-					ScalarIter::new_at(self.data, self.pattern, base_offset),
-				);
+
+				self.tail = Some(ScalarIter::new_at(self.data, self.pattern, base_offset));
 			}
 		}
 	}

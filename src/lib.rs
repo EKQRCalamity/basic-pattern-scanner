@@ -142,7 +142,14 @@ mod tests {
 
 	#[test]
 	fn mask_shorter_than_bytes_is_error() {
-		assert!(Pattern::new(vec![0xAA, 0xBB], vec![0xFF], crate::pattern::types::MaskType::Byte).is_err());
+		assert!(
+			Pattern::new(
+				vec![0xAA, 0xBB],
+				vec![0xFF],
+				crate::pattern::types::MaskType::Byte
+			)
+			.is_err()
+		);
 	}
 
 	#[test]
@@ -211,7 +218,6 @@ mod tests {
 		assert!(!p.matches_at(data, 1));
 	}
 
-
 	#[test]
 	fn nibble_mask_scan() {
 		let p = Pattern::from_ida_like_with_nibble("?F").unwrap();
@@ -268,9 +274,7 @@ mod tests {
 			0xC3, 0x90, 0x90, 0x90,
 		];
 
-		let p = Pattern::from_ida_str(
-			"48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ??"
-		).unwrap();
+		let p = Pattern::from_ida_str("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ??").unwrap();
 
 		let matches = scan_all(data, &p);
 		assert_eq!(matches.len(), 1);
