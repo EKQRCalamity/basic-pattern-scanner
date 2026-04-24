@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "simd_std_unstable", feature(portable_simd))]
+
 pub mod error;
 pub mod pattern;
 pub mod scanner;
@@ -5,7 +7,105 @@ pub mod scanner;
 #[cfg(test)]
 mod tests {
 	use crate::pattern::types::Pattern;
-	use crate::scanner::scanner::*;
+	use crate::scanner::scalar::*;
+	use crate::scanner::types::*;
+
+	#[cfg(feature = "simd_std_unstable")]
+	mod simd_tests {
+		use super::*;
+		use crate::scanner::simd_std::SimdScanner;
+		use crate::scanner::traits::PatternIterator;
+
+		fn offsets(matches: Vec<Match>) -> Vec<usize> {
+			matches.into_iter().map(|m| m.offset).collect()
+		}
+
+		#[test]
+		fn simd_single_match_at_start() {
+			let data = &[0xDE, 0xAD, 0xBE, 0xEF, 0x00];
+			let p = Pattern::from_ida_str("DE AD BE EF").unwrap();
+			let scanner = SimdScanner;
+			assert_eq!(offsets(scanner.find_all(data, &p)), &[0]);
+		}
+
+		#[test]
+		fn simd_single_match_at_end() {
+			let data = &[0x00, 0x00, 0xDE, 0xAD];
+			let p = Pattern::from_ida_str("DE AD").unwrap();
+			let scanner = SimdScanner;
+			assert_eq!(offsets(scanner.find_all(data, &p)), &[2]);
+		}
+
+		#[test]
+		fn simd_multiple_matches() {
+			let data = &[0xAA, 0xBB, 0x00, 0xAA, 0xBB];
+			let p = Pattern::from_ida_str("AA BB").unwrap();
+			let scanner = SimdScanner;
+			assert_eq!(offsets(scanner.find_all(data, &p)), &[0, 3]);
+		}
+
+		#[test]
+		fn simd_no_match() {
+			let data = &[0x11, 0x22, 0x33];
+			let p = Pattern::from_ida_str("AA BB").unwrap();
+			let scanner = SimdScanner;
+			assert!(scanner.find_all(data, &p).is_empty());
+		}
+
+		#[test]
+		fn simd_wildcard_matches_any_byte() {
+			let data = &[0xAA, 0x00, 0xBB, 0xAA, 0xFF, 0xBB];
+			let p = Pattern::from_ida_str("AA ?? BB").unwrap();
+			let scanner = SimdScanner;
+			assert_eq!(offsets(scanner.find_all(data, &p)), &[0, 3]);
+		}
+
+		#[test]
+		fn simd_all_wildcard_pattern_matches_every_position() {
+			let data = &[0x01, 0x02, 0x03];
+			let p = Pattern::from_ida_str("?? ??").unwrap();
+			let scanner = SimdScanner;
+			assert_eq!(offsets(scanner.find_all(data, &p)), &[0, 1]);
+		}
+
+		#[test]
+		fn simd_pattern_longer_than_data_no_match() {
+			let data = &[0xAA, 0xBB];
+			let p = Pattern::from_ida_str("AA BB CC DD").unwrap();
+			let scanner = SimdScanner;
+			assert!(scanner.find_all(data, &p).is_empty());
+		}
+
+		#[test]
+		fn simd_matches_at_correct_positions() {
+			let data = &[0x00, 0xAA, 0xBB, 0x00];
+			let p = Pattern::from_ida_str("AA BB").unwrap();
+			assert!(!p.matches_at(data, 0));
+			assert!(p.matches_at(data, 1));
+			assert!(!p.matches_at(data, 2));
+		}
+
+		#[test]
+		fn simd_scan_with_base_address() {
+			let data = &[0x00, 0xAA, 0xBB];
+			let p = Pattern::from_ida_str("AA BB").unwrap();
+			let base: u64 = 0x140000000;
+			let scanner = SimdScanner;
+			let results = scanner.find_all_with_base(data, &p, base);
+			assert_eq!(results.len(), 1);
+			assert_eq!(results[0].offset, 1);
+			assert_eq!(results[0].address, base + 1);
+		}
+
+		#[test]
+		fn simd_iter_stops_early() {
+			let data = &[0xAA, 0x00, 0xAA, 0x00, 0xAA];
+			let p = Pattern::from_ida_str("AA").unwrap();
+			let scanner = SimdScanner;
+			let first = scanner.scan_all(data, &p).next().unwrap();
+			assert_eq!(first.offset, 0);
+		}
+	}
 
 	fn offsets(matches: Vec<Match>) -> Vec<usize> {
 		matches.into_iter().map(|m| m.offset).collect()

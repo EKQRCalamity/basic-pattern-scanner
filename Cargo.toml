@@ -1,6 +1,6 @@
 [package]
 name = "basic_pattern_scanner"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Fast no-dependencies byte-pattern scanner with IDA-style and nibble-mask pattern support"
 license = "MIT"
@@ -9,3 +9,7 @@ keywords = ["pattern", "scanner", "memory", "ida", "signature"]
 repository = "https://github.com/EKQRCalamity/basic-pattern-scanner"
 
 [dependencies]
+
+[features]
+default = []
+simd_std_unstable = []

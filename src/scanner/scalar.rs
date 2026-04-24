@@ -1,12 +1,11 @@
-use crate::pattern::types::Pattern;
+use crate::{pattern::types::Pattern, scanner::{traits::PatternIterator, types::{Match, MatchWithAddr}}};
 
-pub struct Match {
-	pub offset: usize,
-}
+pub struct ScalarScanner;
 
-pub struct MatchWithAddr {
-	pub offset: usize,
-	pub address: u64, // base + offset; u64 so it's valid on 32-bit hosts scanning 64-bit targets
+impl PatternIterator for ScalarScanner {
+	fn scan_all<'a>(&self, data: &'a [u8], pattern: &'a Pattern) -> Box<dyn Iterator<Item = Match> + 'a> {
+	  Box::new(MatchIter::new(data, pattern))
+	}
 }
 
 /// Lazily yields every offset in `data` where `pat` matches.
@@ -14,7 +13,7 @@ pub struct MatchWithAddr {
 /// comparison on most positions.
 pub struct MatchIter<'a> {
 	data: &'a [u8],
-	pat: &'a Pattern,
+	pattern: &'a Pattern,
 	// First non-wildcard pattern byte used as a cheap pre-filter.
 	anchor_idx: usize,
 	anchor_masked: u8,
@@ -23,18 +22,30 @@ pub struct MatchIter<'a> {
 }
 
 impl<'a> MatchIter<'a> {
-	fn new(data: &'a [u8], pat: &'a Pattern) -> Self {
+	pub (crate) fn new(data: &'a [u8], pattern: &'a Pattern) -> Self {
 		// anchor_mask == 0 means all-wildcard pattern; the anchor check is skipped.
-		let (anchor_idx, anchor_masked, anchor_mask) = pat
+		let (anchor_idx, anchor_masked, anchor_mask) = pattern
 			.mask
 			.iter()
-			.zip(pat.masked_bytes.iter())
+			.zip(pattern.masked_bytes.iter())
+			.enumerate()
+			.find(|(_, (mask, _))| **mask != 0)
+			.map(|(id, (mask, masked_bool))| (id, *masked_bool, *mask))
+			.unwrap_or((0, 0, 0));
+
+		Self { data, pattern, anchor_idx, anchor_masked, anchor_mask, pos: 0 }
+	}
+
+	#[cfg_attr(not(feature = "simd_std_unstable"), allow(dead_code))]
+	pub (crate) fn new_at(data: &'a [u8], pattern: &'a Pattern, position: usize) -> Self {
+		let (anchor_idx, anchor_masked, anchor_mask) = pattern
+			.mask.iter().zip(pattern.masked_bytes.iter())
 			.enumerate()
 			.find(|(_, (m, _))| **m != 0)
 			.map(|(i, (m, mb))| (i, *mb, *m))
-			.unwrap_or((0, 0, 0));
+			.unwrap_or((0,0,0));
 
-		Self { data, pat, anchor_idx, anchor_masked, anchor_mask, pos: 0 }
+		Self { data, pattern, anchor_idx, anchor_masked, anchor_mask, pos: position }
 	}
 }
 
@@ -43,14 +54,14 @@ impl<'a> Iterator for MatchIter<'a> {
 
 	#[inline]
 	fn next(&mut self) -> Option<Self::Item> {
-		let pat_len = self.pat.masked_bytes.len();
+		let pat_len = self.pattern.masked_bytes.len();
 		if pat_len == 0 {
 			return None;
 		}
 
 		let data = self.data;
-		let mask = self.pat.mask.as_slice();
-		let mb = self.pat.masked_bytes.as_slice();
+		let mask = self.pattern.mask.as_slice();
+		let mb = self.pattern.masked_bytes.as_slice();
 		let anchor_idx = self.anchor_idx;
 		let anchor_masked = self.anchor_masked;
 		let anchor_mask = self.anchor_mask;
