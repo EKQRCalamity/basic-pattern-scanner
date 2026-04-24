@@ -7,6 +7,7 @@ license = "MIT"
 readme = "README.md"
 keywords = ["pattern", "scanner", "memory", "ida", "signature"]
 repository = "https://github.com/EKQRCalamity/basic-pattern-scanner"
+exclude = ["minimal-example"]
 
 [dependencies]
 
