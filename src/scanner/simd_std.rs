@@ -109,7 +109,7 @@ impl<'a> SimdMatchIter<'a> {
 
 		self.simd_pos += LANES;
 
-		return true;
+		true
 	}
 }
 
